@@ -1,0 +1,115 @@
+---
+# This is the collector configuration of Central OpenTelemetry Collector.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-otel-collector-config
+  namespace: sai-narasingu-otel
+data:
+  # This config specifies from where the collector will receive data from, how it will process that data and where it will send.
+  central-otel-collector.yaml: |
+    # This part of the config provides details on from where opentelemetry collector will receive data.
+    receivers:
+      # In our case, the source of the data is one of the following:
+      # a. OpenTelemetry Java Agent.
+      # b. OpenTelemetry SDK
+      # c. AppDynamics Hybrid Agent
+      # In all the above cases, the data will be coming in OTLP format over GRPC protocol.
+      otlp:
+        protocols:
+          grpc:
+          http:
+    
+    # This part of the config provides details on how opentelemetry collector will process data after receiving and  before sending to any backends via any exporter.
+    processors:
+      # This part configures how the data will be batched in the opentelemetry collector before sending to any backend.
+      batch:
+      # This part configures how the opentelemetry collector will process the data before sending it to AppDynamics CSaaS.
+      resource:
+        attributes:
+        - key: appdynamics.controller.account
+          action: upsert
+          value: "controllerces"
+        - key: appdynamics.controller.host
+          action: upsert      
+          value: "controllerces.saas.appdynamics.com"
+        - key: appdynamics.controller.port
+          action: upsert
+          value: 443
+    
+    # This part configures where opentelemetry collector will send data to.
+    exporters:
+      # This part says that the opentelemetry collector will write logs in debug mode.
+      logging:
+        loglevel: debug
+      # This part says that the opentelemetry collector will send data to OTIS pipeline for AppDynamicas CSaaS.
+      otlphttp:
+        endpoint: "https://pdx-sls-agent-api.saas.appdynamics.com"
+        # PDX API Key for controllerces
+        headers: {"x-api-key": "1a7da67164c06228bb58bd7df1cf435a1912372f6e411229217dc1a28829a01d"}
+        tls:
+          insecure: true
+
+    # This part basically enables the specific receivers, processors and exporters.    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [logging, otlphttp]
+      telemetry:
+        logs:
+          level: "debug"
+
+---
+# This is the deployment configuration for Central OpenTelemetry Collector
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-otel-collector
+  namespace: sai-narasingu-otel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: central-otel-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: central-otel-collector
+    spec:
+      containers:
+      - name: central-otel-collector
+        image: otel/opentelemetry-collector:0.48.0
+        args:
+        - --config=/conf/central-otel-collector.yaml
+        volumeMounts:
+        - name: central-otel-collector-config
+          mountPath: /conf
+      volumes:
+      - name: central-otel-collector-config
+        configMap:
+          name: central-otel-collector-config
+          items:
+          - key: central-otel-collector.yaml
+            path: central-otel-collector.yaml
+
+---
+# This is the service configuration for Central OpenTelemetry Collector.
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-otel-collector
+  namespace: sai-narasingu-otel
+spec:
+  selector:
+    app.kubernetes.io/name: central-otel-collector
+  ports:
+  - name: port-4317
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - name: port-4318
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

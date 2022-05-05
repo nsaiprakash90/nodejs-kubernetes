@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-helloworld-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      appName: nodejs-helloworld-web
+  template:
+    metadata:
+      labels:
+        appName: nodejs-helloworld-web
+    spec:
+      containers:
+      - name: nodejs-helloworld
+        image: docker.io/narasingu/nodejs-helloworld-web-kubernetes:latest
+        command: ["/bin/sh"]
+        args: ["-c", "node /home/node/app/server.js"]
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-helloworld-web-svc
+  labels:
+    appName: nodejs-helloworld-web
+spec:
+  selector:
+    appName: nodejs-helloworld-web
+  ports:
+  - protocol: TCP
+    port: 8080
