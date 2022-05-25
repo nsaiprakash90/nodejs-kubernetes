@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: nodejs-helloworld
-        image: docker.io/narasingu/nodejs-helloworld-web-kubernetes:latest
+        image: docker.io/narasingu/nodejs-helloworld-web-kubernetes:05-24-22
         command: ["/bin/sh"]
         args: ["-c", "node /home/node/app/server.js"]
         ports:

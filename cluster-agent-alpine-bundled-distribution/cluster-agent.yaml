@@ -10,7 +10,7 @@ spec:
   # docker image info
   image: "docker.io/appdynamics/cluster-agent:22.4.0"
   serviceAccountName: appdynamics-cluster-agent
-  nsToMonitor: [appdynamics-cluster-agent-sai-narasingu]
+  nsToMonitor: [sai-narasingu]
   resourcesToInstrument: [Deployment]
   netvizInfo:
     bciEnabled: true
@@ -20,9 +20,10 @@ spec:
   metricUploadRetryIntervalMilliSeconds: 5
   numberOfTaskWorkers: 2
   instrumentationMethod:  Env
-  nsToInstrumentRegex: appdynamics-cluster-agent-sai-narasingu
+  nsToInstrumentRegex: sai-narasingu
   instrumentationRules:
     - appName: Nodejs-Sai-Cluster-Agent
+      language: nodejs
       imageInfo:
         image: "docker.io/appdynamics/nodejs-agent:21.9.0-14-alpine"
         agentMountPath: /opt/appdynamics
